@@ -33,7 +33,10 @@ for platform in $PLATFORMS; do
     bash -c '
       set -euo pipefail
       apt-get update
-      apt-get install -y --no-install-recommends pkg-config libdbus-1-dev libudev-dev ca-certificates tar
+      if ! apt-get install -y --no-install-recommends pkg-config libdbus-1-dev libudev-dev ca-certificates tar; then
+        apt-get install -y --no-install-recommends pkg-config libdbus-1-dev tar
+        apt-get install -y --allow-downgrades --no-install-recommends libudev-dev/bullseye
+      fi
       cargo build --release -p yundrone-ble-server
       tmp="$(mktemp -d)"
       mkdir -p "$tmp/package/deploy/systemd" "/work/dist/ble-server/releases/$VERSION"

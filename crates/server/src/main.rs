@@ -95,6 +95,7 @@ async fn main() -> anyhow::Result<()> {
             reload_tx,
         ),
     );
+    let write_command_events = command_events.clone();
 
     // We process incoming writes here. Because we used Io method, bluer will actually provide a stream of writes.
     // However, writing an async handler in bluer requires registering an Io handler, but for simplicity we can use Fun.
@@ -105,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
             write: true,
             write_without_response: true,
             method: CharacteristicWriteMethod::Fun(Box::new(move |new_value, _req| {
-                let command_events = command_events.clone();
+                let command_events = write_command_events.clone();
                 Box::pin(async move {
                     match protocol::parse_request(&new_value) {
                         Ok(req) => {

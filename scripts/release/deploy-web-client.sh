@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REMOTE="${YUNDRONE_INSTALL_REMOTE:-self-cloudserver}"
-REMOTE_ROOT="${YUNDRONE_WEB_REMOTE_ROOT:-/var/www/tool.yundrone.cn/ble}"
+REMOTE_ROOT="${YUNDRONE_WEB_REMOTE_ROOT:-/var/www/tool.yundrone.cn/ble/current}"
 VERSION="${VERSION:-$(tr -d '\r\n' <"$ROOT_DIR/VERSION")}"
 DIST_DIR="$ROOT_DIR/web-client/dist"
 ARCHIVE="$ROOT_DIR/dist/yundrone-web-ble-$VERSION.tar.gz"
