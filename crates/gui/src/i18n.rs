@@ -99,6 +99,16 @@ impl Lang {
             (Lang::Zh, "col_channel") => "信道 (CH)",
             (Lang::En, "cmd_capabilities") => "Protocol Capabilities",
             (Lang::Zh, "cmd_capabilities") => "协议能力",
+            (Lang::En, "alias_label") => "Device alias:",
+            (Lang::Zh, "alias_label") => "设备昵称:",
+            (Lang::En, "alias_help") => {
+                "1-8 lowercase letters or digits. Empty clears back to bleinit."
+            }
+            (Lang::Zh, "alias_help") => "1-8 位小写字母或数字。留空则恢复 bleinit。",
+            (Lang::En, "alias_save") => "Save alias",
+            (Lang::Zh, "alias_save") => "保存昵称",
+            (Lang::En, "alias_clear") => "Clear alias",
+            (Lang::Zh, "alias_clear") => "清除昵称",
             (Lang::En, "diag_result_title") => "Diagnostic Result",
             (Lang::Zh, "diag_result_title") => "诊断结果",
             (Lang::En, "diag_result_empty") => "Run a diagnostic command to view parsed result.",

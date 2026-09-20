@@ -144,6 +144,11 @@
   font-weight: 400;
 }
 
+.yd-alias-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .yd-interface-row {
   display: grid;
   grid-template-columns: minmax(5rem, 8rem) auto minmax(0, 1fr);

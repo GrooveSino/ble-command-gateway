@@ -33,6 +33,8 @@ export function commandLoadingLabel(command: GatewayCommand | undefined, t: TFun
       return t("loading.system.status");
     case "system.capabilities":
       return t("loading.system.capabilities");
+    case "system.set_alias":
+      return t("loading.system.set_alias");
     case "link.heartbeat":
       return t("loading.link.heartbeat");
     case "wifi.profiles.list":

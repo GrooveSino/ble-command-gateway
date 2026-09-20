@@ -31,6 +31,7 @@ pub mod commands {
     pub const CMD_LINK_HEARTBEAT: &str = "link.heartbeat";
     pub const CMD_SYSTEM_STATUS: &str = "system.status";
     pub const CMD_SYSTEM_CAPABILITIES: &str = "system.capabilities";
+    pub const CMD_SYSTEM_SET_ALIAS: &str = "system.set_alias";
     pub const CMD_WIFI_SCAN: &str = "wifi.scan";
     pub const CMD_WIFI_PROVISION: &str = "wifi.provision";
     pub const CMD_WIFI_PROFILES_LIST: &str = "wifi.profiles.list";

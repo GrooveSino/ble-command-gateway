@@ -32,8 +32,10 @@ pub fn build_runtime_context(
     adapter_address: Address,
 ) -> anyhow::Result<ServerRuntimeContext> {
     let name_prefix = crate::config::device_prefix_from_args(&args)?;
+    let serial = crate::device_name::serial_from_mac(adapter_address.0);
+    let alias = crate::alias_store::load_alias(&crate::alias_store::alias_path(), &serial);
     let identity_name =
-        crate::device_name::build_device_name_from_mac(&name_prefix, Some(adapter_address.0));
+        crate::device_name::compose_device_name(&name_prefix, alias.as_deref(), &serial);
     Ok(ServerRuntimeContext {
         backend_preference: args.backend,
         advertising_backend: args.backend,
@@ -373,7 +375,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(context.identity.name, "yundrone-12abcd");
+        assert_eq!(context.identity.name, "yundrone-bleinit-12abcd");
         assert_eq!(context.adapter_address, address);
     }
 }

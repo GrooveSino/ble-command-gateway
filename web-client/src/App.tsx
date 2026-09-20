@@ -179,6 +179,7 @@ export default function App({ initialTrace }: AppProps) {
   const applyResponse = (cmd: GatewayCommand, response: CommandResponse) => {
     if (cmd === "system.status") setStatusResponse(response);
     if (cmd === "system.capabilities") setCapabilitiesResponse(response);
+    if (cmd === "system.set_alias" && response.ok) void executeCommand("system.status");
     if (cmd === "link.heartbeat") setHeartbeatResponse(response);
     if (cmd === "wifi.scan") {
       const loaded = Array.isArray(response.data?.networks) ? response.data.networks as unknown as WifiNetwork[] : [];
@@ -231,7 +232,7 @@ export default function App({ initialTrace }: AppProps) {
                 {WORKSPACE_TABS.map((tab) => <Tab key={tab.key}>{t(tab.labelKey)}</Tab>)}
               </TabList>
               <TabPanels>
-                <TabPanel><BasicInfoPanel busyCommand={state.busyCommand} statusResponse={statusResponse} capabilitiesResponse={capabilitiesResponse} heartbeatResponse={heartbeatResponse} onStatus={() => void runCommand("system.status")} onCapabilities={() => void runCommand("system.capabilities")} onHeartbeat={() => void runCommand("link.heartbeat")} /></TabPanel>
+                <TabPanel><BasicInfoPanel busyCommand={state.busyCommand} statusResponse={statusResponse} capabilitiesResponse={capabilitiesResponse} heartbeatResponse={heartbeatResponse} onStatus={() => void runCommand("system.status")} onCapabilities={() => void runCommand("system.capabilities")} onHeartbeat={() => void runCommand("link.heartbeat")} onSetAlias={(alias) => void runCommand("system.set_alias", { alias })} /></TabPanel>
                 <TabPanel><ProvisionWorkbench connected={connected} busyCommand={state.busyCommand} deviceName={state.deviceName} journeyStep={journeyStep} networks={networks} ssid={ssid} password={password} networkFilter={networkFilter} result={provisionResult} error={error} onSsidChange={setSsid} onPasswordChange={setPassword} onNetworkFilterChange={setNetworkFilter} onScan={() => void runCommand("wifi.scan")} onProvision={() => window.confirm(t("provision.confirm", { device: state.deviceName ?? "", ssid })) && void runCommand("wifi.provision", { ssid, pwd: password })} onResetResult={() => setProvisionResponse(undefined)} /></TabPanel>
                 <TabPanel><ProfilesPanel busyCommand={state.busyCommand} profiles={profiles} selected={selectedProfiles} onRefresh={() => void runCommand("wifi.profiles.list")} onToggle={(uuid) => setSelectedProfiles((items) => items.includes(uuid) ? items.filter((item) => item !== uuid) : [...items, uuid])} onDelete={() => window.confirm(t("profiles.deleteConfirm", { count: selectedProfiles.length })) && void runCommand("wifi.profiles.delete", { uuids: selectedProfiles, force: true })} /></TabPanel>
                 <TabPanel><RawPanel busyCommand={state.busyCommand} command={rawCommand} args={rawArgs} onCommandChange={setRawCommand} onArgsChange={setRawArgs} onSend={() => sendRawCommand(rawCommand, rawArgs, runCommand, addTrace, t)} /></TabPanel>

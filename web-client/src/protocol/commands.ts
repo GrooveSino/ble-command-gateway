@@ -6,6 +6,7 @@ export const USER_COMMANDS = [
   "link.heartbeat",
   "system.status",
   "system.capabilities",
+  "system.set_alias",
   "wifi.scan",
   "wifi.provision",
   "wifi.profiles.list",
@@ -91,6 +92,8 @@ export function commandLabel(cmd: GatewayCommand, t: TFunction): string {
       return t("commands.system.status");
     case "system.capabilities":
       return t("commands.system.capabilities");
+    case "system.set_alias":
+      return t("commands.system.set_alias");
     case "wifi.scan":
       return t("commands.wifi.scan");
     case "wifi.provision":
@@ -111,6 +114,9 @@ export function commandProtocolLabel(cmd: GatewayCommand): string {
 function normalizeArgs(cmd: GatewayCommand, args: JsonObject): JsonObject {
   if (EMPTY_ARGS.has(cmd)) {
     return {};
+  }
+  if (cmd === "system.set_alias") {
+    return { alias: typeof args.alias === "string" ? args.alias.trim() : "" };
   }
   if (cmd === "wifi.scan") {
     return typeof args.ifname === "string" && args.ifname.length > 0

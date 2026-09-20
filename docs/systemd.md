@@ -151,9 +151,9 @@ BLE response
 
 日志不会打印完整响应 payload，也不会打印 Wi-Fi 密码；分片部分只展示大小、数量和传输模式。
 
-部署验证时请记录日志里的 `identity_name`，例如 `identity_name=yundrone-12abcd`，然后在 CLI / GUI / Web Client 中按前缀 `yundrone` 扫描，再从候选列表里选择对应实例。
+部署验证时请记录日志里的 `identity_name`，例如 `identity_name=yundrone-bleinit-12abcd`，然后在 CLI / GUI / Web Client 中按前缀 `yundrone` 扫描，再从候选列表里选择对应实例。
 
-设备名不再持久化。server 每次启动都等待 BlueZ 默认控制器，优先使用 `hci0`，否则使用名称字典序第一项，并从 MAC 地址后六位生成 `<prefix>-<sn6>`。安装器升级时会删除旧的 `/var/lib/yundrone/ble-device-name`。控制器 60 秒内仍不可用、地址为全零或全 `ff` 时，server 记录 `identity_name=yundrone-null` 后退出，由 systemd 按 `Restart=on-failure` 重试；`yundrone-null` 只是诊断占位，不表示没有蓝牙硬件时仍能广播。
+未设置昵称时，server 每次启动都等待 BlueZ 默认控制器，优先使用 `hci0`，否则使用名称字典序第一项，并从 MAC 地址后六位生成 `<prefix>-bleinit-<sn6>`。用户通过 `system.set_alias` 设置的昵称保存在 `/var/lib/yundrone/ble-alias`，并绑定当时的 MAC；绑定 MAC 对不上时会删除该文件并回到 `bleinit`。安装器升级时仍会删除旧的 `/var/lib/yundrone/ble-device-name`。控制器 60 秒内仍不可用、地址为全零或全 `ff` 时，server 记录 `identity_name=yundrone-null` 后退出，由 systemd 按 `Restart=on-failure` 重试；超时路径不改写别名文件。`yundrone-null` 只是诊断占位，不表示没有蓝牙硬件时仍能广播。
 
 建议直接用下面的命令过滤关键日志：
 

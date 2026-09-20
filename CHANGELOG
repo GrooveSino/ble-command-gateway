@@ -1,3 +1,12 @@
+2026.5.1 - 2026-09-20
+
+- 未设置昵称时 BLE 公开名改为 `yundrone-bleinit-<mac6>`，例如 `yundrone-bleinit-12abcd`；设置昵称后为 `yundrone-<alias>-<mac6>`。
+- 新增 `system.set_alias`，允许在已连接的 TUI、GUI 和 Web Client 里设置或清除 1-8 位小写昵称。
+- 昵称只持久化 alias 与绑定 MAC；克隆已起名的系统盘或更换蓝牙控制器后自动清除昵称，回到 `bleinit` 形式。
+- 无可用蓝牙适配器时仍记录 `yundrone-null` 后退出，不会改写别名文件。
+- 安装器按同一规则展示即将广播的名字；旧 Web Client 仍能识别新的 `yundrone-bleinit-*` 和 `yundrone-<alias>-<mac6>` 名称。
+- 升级后尚未起名的设备会从 `yundrone-12abcd` 变为 `yundrone-bleinit-12abcd`；客户端继续兼容历史 MAC 名。
+
 2026.4.1 - 2026-09-03
 
 - 完成 Jetson Orin NX / BlueZ 5.53 / Realtek 蓝牙适配，自动选择 BlueZ D-Bus 或 legacy HCI 广播后端。

@@ -82,9 +82,18 @@ async fn main() -> anyhow::Result<()> {
     let (notify_tx, _) = broadcast::channel::<Vec<u8>>(32);
     let write_notify_tx = notify_tx.clone();
     let read_notify_tx = notify_tx.clone();
+    let (reload_tx, mut reload_rx) = tokio::sync::watch::channel(());
+    let serial = server::device_name::serial_from_mac(runtime.adapter_address.0);
+    let alias = server::alias_store::load_alias(&server::alias_store::alias_path(), &serial);
     let command_events = server::command_events::CommandEventSender::new(
         write_notify_tx,
-        server::services::ServiceContext::new(runtime.identity.name.clone()),
+        server::services::ServiceContext::live(
+            runtime.identity.prefix.clone(),
+            serial,
+            runtime.identity.name.clone(),
+            alias,
+            reload_tx,
+        ),
     );
 
     // We process incoming writes here. Because we used Io method, bluer will actually provide a stream of writes.
@@ -192,27 +201,60 @@ async fn main() -> anyhow::Result<()> {
         "ble.gatt.ready"
     );
 
+    let mut current_phase = server::advertising::AdvertisingPhase::FastStart;
     let mut advertising_session = server::runtime::start_advertising(
         &adapter,
         &advertising_capabilities,
         &mut runtime,
-        server::advertising::AdvertisingPhase::FastStart,
+        current_phase,
     )
     .await?;
+    let fast_deadline = tokio::time::Instant::now() + runtime.advertising_policy.fast_duration;
 
-    let reset_delay = tokio::time::sleep(runtime.advertising_policy.fast_duration);
-    tokio::pin!(reset_delay);
-    tokio::select! {
-        _ = tokio::signal::ctrl_c() => {}
-        _ = &mut reset_delay => {
-            advertising_session.stop().await?;
-            advertising_session = server::runtime::start_advertising(
-                &adapter,
-                &advertising_capabilities,
-                &mut runtime,
-                server::advertising::AdvertisingPhase::Steady,
-            ).await?;
-            tokio::signal::ctrl_c().await?;
+    loop {
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => break,
+            _ = tokio::time::sleep_until(fast_deadline), if matches!(
+                current_phase,
+                server::advertising::AdvertisingPhase::FastStart
+            ) => {
+                advertising_session.stop().await?;
+                current_phase = server::advertising::AdvertisingPhase::Steady;
+                advertising_session = server::runtime::start_advertising(
+                    &adapter,
+                    &advertising_capabilities,
+                    &mut runtime,
+                    current_phase,
+                )
+                .await?;
+            }
+            result = reload_rx.changed() => {
+                if result.is_err() {
+                    break;
+                }
+                runtime.identity.name = command_events.device_name();
+                if let Err(err) = server::adapter_identity::apply_and_log_public_identity(
+                    &adapter,
+                    &runtime.identity.name,
+                )
+                .await
+                {
+                    warn!(
+                        adapter_name = %adapter.name(),
+                        identity_name = %runtime.identity.name,
+                        error = %err,
+                        "ble.adapter.identity_apply_failed"
+                    );
+                }
+                advertising_session.stop().await?;
+                advertising_session = server::runtime::start_advertising(
+                    &adapter,
+                    &advertising_capabilities,
+                    &mut runtime,
+                    current_phase,
+                )
+                .await?;
+            }
         }
     }
 

@@ -1,5 +1,5 @@
-import { Button, CodeSnippet, Tag, Tile } from "@carbon/react";
-import { useState } from "react";
+import { Button, CodeSnippet, Tag, TextInput, Tile } from "@carbon/react";
+import { useEffect, useState } from "react";
 
 import { useI18n } from "../../i18n/useI18n";
 import { capabilitiesView, heartbeatAlive, statusView } from "../../ui/diagnostics";
@@ -13,6 +13,7 @@ export function BasicInfoPanel({
   onStatus,
   onCapabilities,
   onHeartbeat,
+  onSetAlias,
 }: {
   busyCommand?: GatewayCommand;
   statusResponse?: CommandResponse;
@@ -21,12 +22,18 @@ export function BasicInfoPanel({
   onStatus: () => void;
   onCapabilities: () => void;
   onHeartbeat: () => void;
+  onSetAlias: (alias: string) => void;
 }) {
   const { t } = useI18n();
   const [showRaw, setShowRaw] = useState(false);
   const [showProtocol, setShowProtocol] = useState(false);
+  const [aliasInput, setAliasInput] = useState("");
   const status = statusView(statusResponse, t);
   const capabilities = capabilitiesView(capabilitiesResponse, t);
+  const canSetAlias = capabilities?.commands.includes("system.set_alias") === true;
+  useEffect(() => {
+    setAliasInput(status?.alias ?? "");
+  }, [status?.alias]);
   const raw = statusResponse ?? capabilitiesResponse ?? heartbeatResponse;
   return (
     <section className="yd-utility-panel yd-basic-info-panel">
@@ -51,6 +58,26 @@ export function BasicInfoPanel({
           <span>{t("basic.device")}</span>
           <strong>{status?.deviceName ?? t("basic.notRead")}</strong>
           <p>{status ? `${status.hostname} · ${status.user}` : t("basic.deviceHelp")}</p>
+          {canSetAlias && (
+            <div className="yd-alias-form">
+              <TextInput
+                id="device-alias"
+                labelText={t("basic.alias")}
+                helperText={t("basic.aliasHelp")}
+                placeholder={t("basic.aliasPlaceholder")}
+                value={aliasInput}
+                onChange={(event) => setAliasInput(event.target.value)}
+              />
+              <div className="yd-button-row">
+                <Button size="sm" disabled={Boolean(busyCommand)} onClick={() => onSetAlias(aliasInput)}>
+                  {t("basic.aliasSave")}
+                </Button>
+                <Button size="sm" kind="ghost" disabled={Boolean(busyCommand)} onClick={() => onSetAlias("")}>
+                  {t("basic.aliasClear")}
+                </Button>
+              </div>
+            </div>
+          )}
         </Tile>
         <Tile className="yd-metric-card">
           <span>{t("basic.system")}</span>

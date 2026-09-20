@@ -70,6 +70,7 @@ export function capabilitiesResponse(): CommandResponse {
         "link.heartbeat",
         "system.status",
         "system.capabilities",
+        "system.set_alias",
         "wifi.scan",
         "wifi.provision",
       ],

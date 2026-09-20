@@ -38,6 +38,7 @@ pub enum CommandPayload {
     LinkHeartbeat,
     SystemStatus,
     SystemCapabilities,
+    SystemSetAlias { alias: String },
     WifiScan { ifname: Option<String> },
     WifiProvision { ssid: String, pwd: Option<String> },
     WifiProfilesList,
@@ -51,6 +52,7 @@ impl CommandPayload {
             Self::LinkHeartbeat => crate::commands::CMD_LINK_HEARTBEAT,
             Self::SystemStatus => crate::commands::CMD_SYSTEM_STATUS,
             Self::SystemCapabilities => crate::commands::CMD_SYSTEM_CAPABILITIES,
+            Self::SystemSetAlias { .. } => crate::commands::CMD_SYSTEM_SET_ALIAS,
             Self::WifiScan { .. } => crate::commands::CMD_WIFI_SCAN,
             Self::WifiProvision { .. } => crate::commands::CMD_WIFI_PROVISION,
             Self::WifiProfilesList => crate::commands::CMD_WIFI_PROFILES_LIST,
@@ -65,6 +67,9 @@ impl CommandPayload {
             | Self::SystemStatus
             | Self::SystemCapabilities
             | Self::WifiProfilesList => {}
+            Self::SystemSetAlias { alias } => {
+                args.insert("alias".to_string(), Value::String(alias.clone()));
+            }
             Self::LinkAck(ack) => {
                 args.insert(
                     "ack_type".to_string(),
@@ -117,6 +122,9 @@ impl CommandPayload {
             crate::commands::CMD_SYSTEM_CAPABILITIES => {
                 expect_empty_args(cmd, &args).map(|_| Self::SystemCapabilities)
             }
+            crate::commands::CMD_SYSTEM_SET_ALIAS => Ok(Self::SystemSetAlias {
+                alias: required_string_arg(&args, "alias")?,
+            }),
             crate::commands::CMD_WIFI_SCAN => Ok(Self::WifiScan {
                 ifname: optional_string_arg(&args, "ifname")?,
             }),

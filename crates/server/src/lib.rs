@@ -2,6 +2,7 @@ pub mod adapter_identity;
 pub mod adapter_pairing;
 pub mod advertising;
 pub mod advertising_backend;
+pub mod alias_store;
 pub mod bluetoothd;
 pub mod command_events;
 pub mod config;

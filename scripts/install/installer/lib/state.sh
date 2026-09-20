@@ -132,8 +132,34 @@ installed_version() {
   fi
 }
 
+identity_alias_file() {
+  printf '%s' "${YUNDRONE_BLE_ALIAS_FILE:-${STATE_DIR}/ble-alias}"
+}
+
+identity_alias() {
+  local serial="$1"
+  local alias bound
+  if [ ! -f "$(identity_alias_file)" ]; then
+    printf '%s' "bleinit"
+    return 0
+  fi
+  alias="$(sed -n '1p' "$(identity_alias_file)" | tr -d '\r')"
+  bound="$(sed -n '2p' "$(identity_alias_file)" | tr -d '\r')"
+  if [ "$bound" = "$serial" ] && printf '%s' "$alias" | grep -Eq '^[0-9a-z]{1,8}$' && [ "$alias" != "null" ] && [ "$alias" != "bleinit" ]; then
+    printf '%s' "$alias"
+    return 0
+  fi
+  printf '%s' "bleinit"
+}
+
 identity_name() {
-  printf '%s-%s' "$PREFIX" "$(identity_serial)"
+  local serial
+  serial="$(identity_serial)"
+  if [ "$serial" = "null" ]; then
+    printf '%s-%s' "$PREFIX" "$serial"
+    return 0
+  fi
+  printf '%s-%s-%s' "$PREFIX" "$(identity_alias "$serial")" "$serial"
 }
 
 is_binary_installed() {

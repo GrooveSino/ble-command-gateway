@@ -90,6 +90,7 @@ fn diagnostic_result(
             let ip = data.ip.unwrap_or_else(|| "Unavailable".to_string());
             let mut lines = vec![
                 format!("Device: {}", data.device_name),
+                format!("Alias: {}", data.alias.as_deref().unwrap_or("(unset)")),
                 format!("Hostname: {}", data.hostname),
                 format!("System: {}", data.system),
                 format!("User: {}", data.user),
@@ -130,6 +131,18 @@ fn diagnostic_result(
                     format!("Features: {}", data.features.join(", ")),
                     format!("Payload limit: {} bytes", data.payload_limit),
                     commands,
+                ],
+            }))
+        }
+        protocol::requests::CommandPayload::SystemSetAlias { .. } => {
+            let data: protocol::responses::SetAliasResponseData = response.decode_data()?;
+            Ok(Some(DiagnosticResultCard {
+                title: "Device Alias".to_string(),
+                ok: response.ok,
+                code: response.code.clone(),
+                lines: vec![
+                    format!("Device: {}", data.device_name),
+                    format!("Alias: {}", data.alias.as_deref().unwrap_or("(unset)")),
                 ],
             }))
         }
@@ -249,6 +262,10 @@ pub(super) fn request_success_detail(
         ActionSlot::Capabilities => {
             let data: protocol::responses::CapabilitiesResponseData = response.decode_data()?;
             Ok(Some(data.commands.len().to_string()))
+        }
+        ActionSlot::SetAlias => {
+            let data: protocol::responses::SetAliasResponseData = response.decode_data()?;
+            Ok(Some(data.device_name))
         }
         _ => Ok(None),
     }

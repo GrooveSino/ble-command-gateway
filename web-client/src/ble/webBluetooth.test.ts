@@ -6,6 +6,7 @@ describe("isStableYundroneName", () => {
   it("accepts MAC-derived, diagnostic, and legacy YunDrone names", () => {
     for (const name of [
       "yundrone-12abcd",
+      "yundrone-bleinit-12abcd",
       "yundrone-null",
       "edge [yundrone-12abcd]",
       "yundrone-ytcwln",

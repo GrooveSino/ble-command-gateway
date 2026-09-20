@@ -12,6 +12,7 @@ export type GatewayCommand =
   | "link.heartbeat"
   | "system.status"
   | "system.capabilities"
+  | "system.set_alias"
   | "wifi.scan"
   | "wifi.provision"
   | "wifi.profiles.list"
@@ -63,6 +64,7 @@ export interface StatusInterfaceIpv4 {
 
 export interface StatusResponseData {
   device_name: string;
+  alias?: string;
   hostname: string;
   system: string;
   user: string;

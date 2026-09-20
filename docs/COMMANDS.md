@@ -87,7 +87,8 @@ Arguments: none.
 Response:
 
 - `code`: `OK`, `INTERNAL_ERROR`, or `TIMEOUT`
-- `data.device_name`: public BLE identity string derived from the adapter MAC, for example `yundrone-12abcd`
+- `data.device_name`: public BLE identity string, for example `yundrone-bleinit-12abcd` or `yundrone-lab1-12abcd`
+- `data.alias`: optional user alias; omitted when the device is using the default `bleinit` name
 - `data.hostname`: hostname string
 - `data.system`: `uname -srm` string
 - `data.user`: preferred operator user string
@@ -98,6 +99,22 @@ Response:
 `kind` is `wifi`, `ethernet`, or `other`.
 
 User-facing apps should display `data.device_name` as the device identity. `data.hostname` is diagnostic only and may reveal the Linux host name.
+
+### `system.set_alias`
+
+Purpose: set or clear the user-visible BLE nickname.
+
+Arguments:
+
+- `alias`: string. `1-8` lowercase ASCII letters or digits. Empty string or `bleinit` clears the nickname.
+
+Response:
+
+- `code`: `OK`, `BAD_REQUEST`, or `INTERNAL_ERROR`
+- `data.device_name`: the new advertised BLE name
+- `data.alias`: the stored alias, omitted after a clear
+
+The MAC suffix is not user-editable. Changing the alias rewrites `/var/lib/yundrone/ble-alias` and restarts advertising without dropping the current GATT connection. Clients should display `data.device_name`; the browser/OS picker may keep the old name until the next scan.
 
 ### `system.capabilities`
 

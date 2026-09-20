@@ -52,27 +52,28 @@ yundrone
 设备名必须使用一个单一 BLE local name，不要再设计“短名 / 长名”两套名字。推荐格式是：
 
 ```text
-<prefix>-<mac6>
+<prefix>-<alias>-<mac6>
 ```
 
-默认实例：
+未设置昵称时 `<alias>` 固定为 `bleinit`：
 
 ```text
-yundrone-12abcd
+yundrone-bleinit-12abcd
 ```
 
 字段说明：
 
 - `<prefix>` 是业务前缀，默认 `yundrone`。只使用小写 ASCII 字母、数字和 `-`。
+- `<alias>` 是可选用户昵称，`1-8` 位小写字母或数字，不能含 `-`。未设置时使用保留字 `bleinit`。
 - `<mac6>` 是实际广播用蓝牙控制器 MAC 地址去掉分隔符后的最后 6 个十六进制字符，并统一为小写。
-- Linux 参考 server 每次启动都从 BlueZ 默认控制器重新派生名称，不读取或写入设备名文件；这使同一系统盘复制到不同硬件后自然获得不同身份。
-- 控制器枚举可能晚于进程启动，兼容实现应等待最多 60 秒。超时可记录 `<prefix>-null` 后退出并交给服务管理器重试；无控制器时不能实际广播该占位名。
+- Linux 参考 server 每次启动都从 BlueZ 默认控制器重新派生 MAC 后缀。昵称若存在，必须绑定当时的 MAC；复制系统盘或更换控制器后应丢弃昵称并回到 `bleinit`。
+- 控制器枚举可能晚于进程启动，兼容实现应等待最多 60 秒。超时可记录 `<prefix>-null` 后退出并交给服务管理器重试；无控制器时不能实际广播该占位名，也不应改写昵称文件。
 - 更换蓝牙控制器会改变设备名。客户端仍建议保留对历史名称的宽松匹配，便于升级过渡。
 
 客户端当前候选判断规则是：
 
-- `localName` 必须以 `<prefix>-` 开头，后缀由小写字母数字片段组成，最多使用一个 `-` 分隔，例如 `yundrone-12abcd`、诊断占位 `yundrone-null` 或旧名 `yundrone-ytcwln`。
-- 如果某些平台把名字显示成 `host [yundrone-12abcd]`，客户端也能识别方括号里的稳定身份。
+- `localName` 必须以 `<prefix>-` 开头，后缀由小写字母数字片段组成，最多使用一个 `-` 分隔，例如 `yundrone-bleinit-12abcd`、`yundrone-lab1-12abcd`、诊断占位 `yundrone-null` 或旧名 `yundrone-12abcd` / `yundrone-ytcwln`。
+- 如果某些平台把名字显示成 `host [yundrone-bleinit-12abcd]`，客户端也能识别方括号里的稳定身份。
 - 只有 service UUID 但没有目标前缀的设备不会进入候选列表。
 
 ## 3. 广播字段要求

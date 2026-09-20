@@ -8,7 +8,7 @@ use comfy_table::Table;
 use crossterm::event::{self, Event, KeyCode};
 use inquire::{Password, Select, Text};
 use protocol::requests::CommandPayload;
-use protocol::responses::{StatusResponseData, WifiScanResponseData};
+use protocol::responses::{SetAliasResponseData, StatusResponseData, WifiScanResponseData};
 use std::{
     collections::BTreeMap,
     fmt,
@@ -284,6 +284,7 @@ async fn run_menu_loop(
                 return Ok(());
             }
             MenuAction::Status => run_status(session, trace.as_ref()).await?,
+            MenuAction::SetAlias => run_set_alias(session, &lang, trace.as_ref()).await?,
             MenuAction::WifiScan => run_wifi_scan(session, trace.as_ref()).await?,
             MenuAction::Provision => run_provision(session, &lang, trace.as_ref()).await?,
             MenuAction::WifiProfiles => {
@@ -327,6 +328,10 @@ async fn run_status(
 fn status_rows(data: &StatusResponseData) -> Vec<(String, String)> {
     let mut rows = vec![
         ("Device".to_string(), data.device_name.clone()),
+        (
+            "Alias".to_string(),
+            data.alias.clone().unwrap_or_else(|| "(unset)".to_string()),
+        ),
         ("Hostname".to_string(), data.hostname.clone()),
         ("System".to_string(), data.system.clone()),
         ("User".to_string(), data.user.clone()),
@@ -353,6 +358,27 @@ fn status_rows(data: &StatusResponseData) -> Vec<(String, String)> {
     }
 
     rows
+}
+
+async fn run_set_alias(
+    session: &mut BleSession,
+    lang: &Lang,
+    trace: Option<&InteractiveTracePrinter>,
+) -> Result<()> {
+    println!("{}", lang.t("alias_help"));
+    let alias = Text::new(lang.t("prmpt_alias"))
+        .with_help_message(lang.t("alias_help_detail"))
+        .prompt()?;
+    let response =
+        execute_request(session, CommandPayload::SystemSetAlias { alias }, 10, trace).await?;
+    println!("{}", response.text);
+    if response.ok {
+        if let Ok(data) = response.decode_data::<SetAliasResponseData>() {
+            println!("{} {}", lang.t("alias_new_name"), data.device_name);
+        }
+        println!("{}", lang.t("alias_reconnect_hint"));
+    }
+    Ok(())
 }
 
 async fn run_wifi_scan(
@@ -485,6 +511,7 @@ fn prompt_menu_action(lang: &Lang) -> Result<MenuAction> {
         lang.t("prompt_menu"),
         vec![
             lang.t("opt_stat"),
+            lang.t("opt_alias"),
             lang.t("opt_scan"),
             lang.t("opt_prov"),
             lang.t("opt_profiles"),
@@ -495,6 +522,7 @@ fn prompt_menu_action(lang: &Lang) -> Result<MenuAction> {
 
     Ok(match selected {
         value if value == lang.t("opt_stat") => MenuAction::Status,
+        value if value == lang.t("opt_alias") => MenuAction::SetAlias,
         value if value == lang.t("opt_scan") => MenuAction::WifiScan,
         value if value == lang.t("opt_prov") => MenuAction::Provision,
         value if value == lang.t("opt_profiles") => MenuAction::WifiProfiles,
@@ -510,6 +538,7 @@ mod tests {
     fn status_rows_include_preferred_ip_and_interfaces() {
         let rows = status_rows(&protocol::responses::StatusResponseData {
             device_name: "yundrone-ytcwln".to_string(),
+            alias: None,
             hostname: "edge-gateway".to_string(),
             system: "Linux 6.1".to_string(),
             user: "yundrone".to_string(),
@@ -574,6 +603,7 @@ impl fmt::Display for CandidateChoice {
 
 enum MenuAction {
     Status,
+    SetAlias,
     WifiScan,
     Provision,
     WifiProfiles,

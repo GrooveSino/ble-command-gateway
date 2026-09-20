@@ -46,6 +46,7 @@ fn non_wifi_response_events_skip_wifi_network_loading() {
         Some(
             protocol::responses::to_map(&protocol::responses::StatusResponseData {
                 device_name: "yundrone-ytcwln".to_string(),
+                alias: None,
                 hostname: "edge-gateway".to_string(),
                 system: "Linux 6.1".to_string(),
                 user: "demo-user".to_string(),

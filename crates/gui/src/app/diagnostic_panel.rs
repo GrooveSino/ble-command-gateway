@@ -32,6 +32,36 @@ impl GatewayApp {
             {
                 self.send_command(ActionSlot::Capabilities, CommandPayload::SystemCapabilities);
             }
+            ui.add_space(10.0);
+            ui.label(self.model.lang.t("alias_label"));
+            ui.text_edit_singleline(&mut self.model.alias_input);
+            ui.small(self.model.lang.t("alias_help"));
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                if ui
+                    .add_enabled(!busy, egui::Button::new(self.model.lang.t("alias_save")))
+                    .clicked()
+                {
+                    self.send_command(
+                        ActionSlot::SetAlias,
+                        CommandPayload::SystemSetAlias {
+                            alias: self.model.alias_input.trim().to_string(),
+                        },
+                    );
+                }
+                if ui
+                    .add_enabled(!busy, egui::Button::new(self.model.lang.t("alias_clear")))
+                    .clicked()
+                {
+                    self.model.alias_input.clear();
+                    self.send_command(
+                        ActionSlot::SetAlias,
+                        CommandPayload::SystemSetAlias {
+                            alias: String::new(),
+                        },
+                    );
+                }
+            });
         });
 
         ui.add_space(14.0);

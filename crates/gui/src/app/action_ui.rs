@@ -15,8 +15,11 @@ pub(crate) const PROVISION_ACTION_SLOTS: [ActionSlot; 4] = [
     ActionSlot::WifiProfilesList,
     ActionSlot::WifiProfilesDelete,
 ];
-pub(crate) const DIAGNOSTIC_ACTION_SLOTS: [ActionSlot; 2] =
-    [ActionSlot::Status, ActionSlot::Capabilities];
+pub(crate) const DIAGNOSTIC_ACTION_SLOTS: [ActionSlot; 3] = [
+    ActionSlot::Status,
+    ActionSlot::Capabilities,
+    ActionSlot::SetAlias,
+];
 pub(crate) const LOG_ACTION_SLOTS: [ActionSlot; 3] = [
     ActionSlot::RawSend,
     ActionSlot::LogsCopy,
@@ -112,6 +115,8 @@ fn running_text(lang: Lang, slot: ActionSlot) -> &'static str {
         (Lang::En, ActionSlot::Status) => "Fetching system info...",
         (Lang::Zh, ActionSlot::Capabilities) => "正在读取协议能力...",
         (Lang::En, ActionSlot::Capabilities) => "Fetching protocol capabilities...",
+        (Lang::Zh, ActionSlot::SetAlias) => "正在更新设备昵称...",
+        (Lang::En, ActionSlot::SetAlias) => "Updating device alias...",
         (Lang::Zh, ActionSlot::RawSend) => "正在发送原始负载...",
         (Lang::En, ActionSlot::RawSend) => "Sending raw payload...",
         (Lang::Zh, ActionSlot::LogsCopy) => "正在复制日志...",
@@ -163,6 +168,13 @@ fn success_text(lang: Lang, feedback: &ActionFeedback) -> String {
         (Lang::En, ActionSlot::Status) => "System info updated.".into(),
         (Lang::Zh, ActionSlot::Capabilities) => "协议能力已更新。".into(),
         (Lang::En, ActionSlot::Capabilities) => "Protocol capabilities updated.".into(),
+        (Lang::Zh, ActionSlot::SetAlias) => {
+            format!("设备名已更新为 {}。", detail.unwrap_or("新名称"))
+        }
+        (Lang::En, ActionSlot::SetAlias) => format!(
+            "Device name updated to {}.",
+            detail.unwrap_or("the new name")
+        ),
         (Lang::Zh, ActionSlot::RawSend) => "原始负载已写入 BLE 特征。".into(),
         (Lang::En, ActionSlot::RawSend) => "Raw payload written to BLE characteristic.".into(),
         (Lang::Zh, ActionSlot::LogsCopy) => "日志已复制。".into(),

@@ -10,6 +10,7 @@ pub(super) fn run_capabilities() -> SystemExecResult {
             protocol::commands::CMD_LINK_HEARTBEAT.to_string(),
             protocol::commands::CMD_SYSTEM_STATUS.to_string(),
             protocol::commands::CMD_SYSTEM_CAPABILITIES.to_string(),
+            protocol::commands::CMD_SYSTEM_SET_ALIAS.to_string(),
             protocol::commands::CMD_WIFI_SCAN.to_string(),
             protocol::commands::CMD_WIFI_PROVISION.to_string(),
             protocol::commands::CMD_WIFI_PROFILES_LIST.to_string(),
@@ -62,7 +63,8 @@ pub(super) async fn run_status(
     let ip = preferred_ipv4(&interfaces);
 
     let data = protocol::responses::StatusResponseData {
-        device_name: context.device_name.clone(),
+        device_name: context.device_name(),
+        alias: crate::device_name::advertised_alias(context.alias().as_deref()).map(str::to_string),
         hostname: hostname.text.clone(),
         system: system.text.clone(),
         user: user.text.clone(),
@@ -74,6 +76,46 @@ pub(super) async fn run_status(
     SystemExecResult::ok(
         "status collected",
         Some(protocol::responses::to_map(&data).expect("status response serializes")),
+    )
+}
+
+pub(super) fn run_set_alias(context: &super::ServiceContext, raw_alias: &str) -> SystemExecResult {
+    if context.serial.is_empty() {
+        return SystemExecResult::error(
+            protocol::codes::CODE_INTERNAL_ERROR,
+            "device serial is unavailable",
+        );
+    }
+    let alias = match crate::alias_store::parse_alias_input(raw_alias) {
+        Ok(value) => value,
+        Err(message) => {
+            return SystemExecResult::error(protocol::codes::CODE_BAD_REQUEST, message);
+        }
+    };
+    let persist = if let Some(value) = alias.as_deref() {
+        crate::alias_store::save_alias(&context.alias_path, value, &context.serial)
+    } else {
+        crate::alias_store::clear_alias(&context.alias_path)
+    };
+    if let Err(err) = persist {
+        return SystemExecResult::error(
+            protocol::codes::CODE_INTERNAL_ERROR,
+            format!("failed to persist alias: {err}"),
+        );
+    }
+    let device_name =
+        crate::device_name::compose_device_name(&context.prefix, alias.as_deref(), &context.serial);
+    context.apply_identity(device_name.clone(), alias.clone());
+    if let Some(tx) = &context.reload_tx {
+        let _ = tx.send(());
+    }
+    let data = protocol::responses::SetAliasResponseData {
+        device_name: device_name.clone(),
+        alias,
+    };
+    SystemExecResult::ok(
+        format!("device name updated to {device_name}"),
+        Some(protocol::responses::to_map(&data).expect("set alias response serializes")),
     )
 }
 

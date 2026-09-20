@@ -124,6 +124,21 @@ mod tests {
     }
 
     #[test]
+    fn accepts_default_bleinit_identity() {
+        let mut properties = base_properties();
+        let criteria = DiscoveryCriteria::for_prefix("yundrone");
+        properties.local_name = Some("yundrone-bleinit-12abcd".to_string());
+
+        let matched = classify_properties(&properties, &criteria).unwrap();
+
+        assert!(matched.matches_identity);
+        assert_eq!(
+            matched.candidate_name.as_deref(),
+            Some("yundrone-bleinit-12abcd")
+        );
+    }
+
+    #[test]
     fn accepts_null_diagnostic_identity() {
         let mut properties = base_properties();
         let criteria = DiscoveryCriteria::for_prefix("yundrone");

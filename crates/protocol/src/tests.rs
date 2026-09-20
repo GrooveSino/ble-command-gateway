@@ -27,6 +27,12 @@ fn every_typed_request_round_trips_through_wire_schema() {
         ),
         CommandRequest::new("req-status", requests::CommandPayload::SystemStatus),
         CommandRequest::new(
+            "req-set-alias",
+            requests::CommandPayload::SystemSetAlias {
+                alias: "lab1".to_string(),
+            },
+        ),
+        CommandRequest::new(
             "req-profiles-list",
             requests::CommandPayload::WifiProfilesList,
         ),
@@ -188,8 +194,13 @@ fn parse_request_decodes_typed_wifi_scan() {
 #[test]
 fn every_typed_response_data_round_trips_through_json_maps() {
     assert_response_data_round_trip(responses::HeartbeatResponseData { alive: true });
+    assert_response_data_round_trip(responses::SetAliasResponseData {
+        device_name: "yundrone-lab1-12abcd".to_string(),
+        alias: Some("lab1".to_string()),
+    });
     assert_response_data_round_trip(responses::StatusResponseData {
         device_name: "yundrone-15-19-a7f2".to_string(),
+        alias: Some("lab1".to_string()),
         hostname: "edge-gateway".to_string(),
         system: "Ubuntu".to_string(),
         user: "demo-user".to_string(),
@@ -296,6 +307,7 @@ fn response_phase_as_str_matches_wire_names() {
 fn large_status_data_response_chunks_and_round_trips() {
     let response_data = responses::StatusResponseData {
         device_name: "yundrone-15-19-a7f2".to_string(),
+        alias: None,
         hostname: "edge-linux-deployment-target".repeat(4),
         system: "Linux 6.1.0-jetson aarch64".repeat(4),
         user: "yundrone".to_string(),

@@ -15,6 +15,7 @@ pub enum ActionSlot {
     WifiProfilesDelete,
     Status,
     Capabilities,
+    SetAlias,
     RawSend,
     LogsCopy,
     LogsClear,
@@ -161,6 +162,7 @@ pub struct AppModel {
     pub selected_wifi_profile_uuids: Vec<String>,
     pub diagnostic_result: Option<DiagnosticResultCard>,
     pub provision_result: Option<ProvisionResultCard>,
+    pub alias_input: String,
     pub command_input: String,
     pub(crate) next_feedback_sequence: u64,
 }
@@ -190,6 +192,7 @@ impl Default for AppModel {
             selected_wifi_profile_uuids: vec![],
             diagnostic_result: None,
             provision_result: None,
+            alias_input: String::new(),
             command_input: String::new(),
             next_feedback_sequence: 0,
         }

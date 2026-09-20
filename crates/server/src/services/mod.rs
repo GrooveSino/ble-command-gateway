@@ -1,4 +1,7 @@
 use serde_json::{Map, Value};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use tokio::sync::watch;
 
 mod command_runner;
 mod network;
@@ -45,16 +48,70 @@ impl SystemExecResult {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct ServiceContext {
-    pub device_name: String,
+    snapshot: Arc<Mutex<IdentitySnapshot>>,
+    pub(super) alias_path: PathBuf,
+    pub(super) prefix: String,
+    pub(super) serial: String,
+    pub(super) reload_tx: Option<watch::Sender<()>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct IdentitySnapshot {
+    device_name: String,
+    alias: Option<String>,
 }
 
 impl ServiceContext {
     pub fn new(device_name: impl Into<String>) -> Self {
         Self {
-            device_name: device_name.into(),
+            snapshot: Arc::new(Mutex::new(IdentitySnapshot {
+                device_name: device_name.into(),
+                alias: None,
+            })),
+            alias_path: crate::alias_store::alias_path(),
+            prefix: String::new(),
+            serial: String::new(),
+            reload_tx: None,
         }
+    }
+
+    pub fn live(
+        prefix: impl Into<String>,
+        serial: impl Into<String>,
+        device_name: impl Into<String>,
+        alias: Option<String>,
+        reload_tx: watch::Sender<()>,
+    ) -> Self {
+        Self {
+            snapshot: Arc::new(Mutex::new(IdentitySnapshot {
+                device_name: device_name.into(),
+                alias,
+            })),
+            alias_path: crate::alias_store::alias_path(),
+            prefix: prefix.into(),
+            serial: serial.into(),
+            reload_tx: Some(reload_tx),
+        }
+    }
+
+    pub fn device_name(&self) -> String {
+        self.snapshot
+            .lock()
+            .expect("identity mutex")
+            .device_name
+            .clone()
+    }
+
+    pub fn alias(&self) -> Option<String> {
+        self.snapshot.lock().expect("identity mutex").alias.clone()
+    }
+
+    pub(super) fn apply_identity(&self, device_name: String, alias: Option<String>) {
+        let mut snapshot = self.snapshot.lock().expect("identity mutex");
+        snapshot.device_name = device_name;
+        snapshot.alias = alias;
     }
 }
 
@@ -74,6 +131,9 @@ pub async fn run_payload_command(
         protocol::requests::CommandPayload::LinkHeartbeat => system_commands::run_heartbeat(),
         protocol::requests::CommandPayload::SystemStatus => {
             system_commands::run_status(context, timeout_sec).await
+        }
+        protocol::requests::CommandPayload::SystemSetAlias { alias } => {
+            system_commands::run_set_alias(context, alias)
         }
         protocol::requests::CommandPayload::WifiScan { ifname } => {
             network::run_wifi_scan(ifname.as_deref()).await
