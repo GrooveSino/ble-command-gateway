@@ -332,6 +332,12 @@ fn status_rows(data: &StatusResponseData) -> Vec<(String, String)> {
             "Alias".to_string(),
             data.alias.clone().unwrap_or_else(|| "(unset)".to_string()),
         ),
+        (
+            "Pending name".to_string(),
+            data.pending_device_name
+                .clone()
+                .unwrap_or_else(|| "(none)".to_string()),
+        ),
         ("Hostname".to_string(), data.hostname.clone()),
         ("System".to_string(), data.system.clone()),
         ("User".to_string(), data.user.clone()),
@@ -539,6 +545,8 @@ mod tests {
         let rows = status_rows(&protocol::responses::StatusResponseData {
             device_name: "yundrone-ytcwln".to_string(),
             alias: None,
+            pending_device_name: None,
+            pending_alias: None,
             hostname: "edge-gateway".to_string(),
             system: "Linux 6.1".to_string(),
             user: "yundrone".to_string(),

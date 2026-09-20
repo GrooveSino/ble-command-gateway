@@ -197,10 +197,13 @@ fn every_typed_response_data_round_trips_through_json_maps() {
     assert_response_data_round_trip(responses::SetAliasResponseData {
         device_name: "yundrone-lab1-12abcd".to_string(),
         alias: Some("lab1".to_string()),
+        applies_after_restart: true,
     });
     assert_response_data_round_trip(responses::StatusResponseData {
         device_name: "yundrone-15-19-a7f2".to_string(),
         alias: Some("lab1".to_string()),
+        pending_device_name: None,
+        pending_alias: None,
         hostname: "edge-gateway".to_string(),
         system: "Ubuntu".to_string(),
         user: "demo-user".to_string(),
@@ -308,6 +311,8 @@ fn large_status_data_response_chunks_and_round_trips() {
     let response_data = responses::StatusResponseData {
         device_name: "yundrone-15-19-a7f2".to_string(),
         alias: None,
+        pending_device_name: None,
+        pending_alias: None,
         hostname: "edge-linux-deployment-target".repeat(4),
         system: "Linux 6.1.0-jetson aarch64".repeat(4),
         user: "yundrone".to_string(),

@@ -87,8 +87,10 @@ Arguments: none.
 Response:
 
 - `code`: `OK`, `INTERNAL_ERROR`, or `TIMEOUT`
-- `data.device_name`: public BLE identity string, for example `yundrone-bleinit-12abcd` or `yundrone-lab1-12abcd`
-- `data.alias`: optional user alias; omitted when the device is using the default `bleinit` name
+- `data.device_name`: currently advertised BLE identity, for example `yundrone-bleinit-12abcd`
+- `data.alias`: optional live alias; omitted when using the default `bleinit` name
+- `data.pending_device_name`: saved name that will apply after the BLE service restarts
+- `data.pending_alias`: saved alias waiting for restart
 - `data.hostname`: hostname string
 - `data.system`: `uname -srm` string
 - `data.user`: preferred operator user string
@@ -111,10 +113,11 @@ Arguments:
 Response:
 
 - `code`: `OK`, `BAD_REQUEST`, or `INTERNAL_ERROR`
-- `data.device_name`: the new advertised BLE name
+- `data.device_name`: the BLE name that will apply after restart
 - `data.alias`: the stored alias, omitted after a clear
+- `data.applies_after_restart`: always `true`
 
-The MAC suffix is not user-editable. Changing the alias rewrites `/var/lib/yundrone/ble-alias` and restarts advertising without dropping the current GATT connection. Clients should display `data.device_name`; the browser/OS picker may keep the old name until the next scan.
+The MAC suffix is not user-editable. Changing the alias only rewrites `/var/lib/yundrone/ble-alias`. Advertising and the live `system.status` name stay unchanged until the BLE service restarts. User-facing copy should say “restart the device”; on an onboard computer that means restarting `yundrone-ble-command-gateway.service`.
 
 ### `system.capabilities`
 

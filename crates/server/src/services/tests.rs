@@ -38,7 +38,7 @@ async fn system_capabilities_command_is_supported() {
 }
 
 #[tokio::test]
-async fn system_set_alias_updates_name_and_notifies_reload() {
+async fn system_set_alias_persists_without_changing_live_name() {
     let path = std::env::temp_dir().join(format!(
         "yundrone-set-alias-{}-{}",
         std::process::id(),
@@ -47,10 +47,8 @@ async fn system_set_alias_updates_name_and_notifies_reload() {
             .unwrap()
             .as_nanos()
     ));
-    let (tx, mut rx) = tokio::sync::watch::channel(());
-    rx.borrow_and_update();
     let mut context =
-        super::ServiceContext::live("yundrone", "12abcd", "yundrone-bleinit-12abcd", None, tx);
+        super::ServiceContext::live("yundrone", "12abcd", "yundrone-bleinit-12abcd", None);
     context.alias_path = path.clone();
 
     let result = run_payload_command(
@@ -65,11 +63,15 @@ async fn system_set_alias_updates_name_and_notifies_reload() {
         protocol::responses::from_map(result.data.as_ref().unwrap()).unwrap();
 
     assert!(result.ok);
+    assert!(data.applies_after_restart);
     assert_eq!(data.device_name, "yundrone-lab1-12abcd");
     assert_eq!(data.alias.as_deref(), Some("lab1"));
-    assert_eq!(context.device_name(), "yundrone-lab1-12abcd");
+    assert_eq!(context.device_name(), "yundrone-bleinit-12abcd");
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "lab1\n12abcd\n");
-    assert!(rx.has_changed().unwrap());
+    assert_eq!(
+        context.pending_identity(),
+        Some(("yundrone-lab1-12abcd".to_string(), Some("lab1".to_string())))
+    );
 
     let cleared = run_payload_command(
         &context,
@@ -81,6 +83,7 @@ async fn system_set_alias_updates_name_and_notifies_reload() {
     .await;
     assert!(cleared.ok);
     assert_eq!(context.device_name(), "yundrone-bleinit-12abcd");
+    assert!(context.pending_identity().is_none());
     assert!(!path.exists());
     let _ = std::fs::remove_file(path);
 }

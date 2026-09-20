@@ -91,6 +91,10 @@ fn diagnostic_result(
             let mut lines = vec![
                 format!("Device: {}", data.device_name),
                 format!("Alias: {}", data.alias.as_deref().unwrap_or("(unset)")),
+                format!(
+                    "Pending name: {}",
+                    data.pending_device_name.as_deref().unwrap_or("(none)")
+                ),
                 format!("Hostname: {}", data.hostname),
                 format!("System: {}", data.system),
                 format!("User: {}", data.user),

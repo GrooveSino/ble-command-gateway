@@ -102,9 +102,11 @@ impl Lang {
             (Lang::En, "alias_label") => "Device alias:",
             (Lang::Zh, "alias_label") => "设备昵称:",
             (Lang::En, "alias_help") => {
-                "1-8 lowercase letters or digits. Empty clears back to bleinit."
+                "1-8 lowercase letters or digits. Saving does not change the live BLE name; restart the device to apply it."
             }
-            (Lang::Zh, "alias_help") => "1-8 位小写字母或数字。留空则恢复 bleinit。",
+            (Lang::Zh, "alias_help") => {
+                "1-8 位小写字母或数字。保存后不会立刻改蓝牙名，请重启设备后生效。"
+            }
             (Lang::En, "alias_save") => "Save alias",
             (Lang::Zh, "alias_save") => "保存昵称",
             (Lang::En, "alias_clear") => "Clear alias",

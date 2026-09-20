@@ -65,6 +65,8 @@ export interface StatusInterfaceIpv4 {
 export interface StatusResponseData {
   device_name: string;
   alias?: string;
+  pending_device_name?: string;
+  pending_alias?: string;
   hostname: string;
   system: string;
   user: string;

@@ -21,6 +21,8 @@ pub struct SetAliasResponseData {
     pub device_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
+    #[serde(default)]
+    pub applies_after_restart: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -60,6 +62,10 @@ pub struct StatusResponseData {
     pub device_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending_device_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending_alias: Option<String>,
     pub hostname: String,
     pub system: String,
     pub user: String,

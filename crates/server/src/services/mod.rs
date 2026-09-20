@@ -1,7 +1,6 @@
 use serde_json::{Map, Value};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use tokio::sync::watch;
 
 mod command_runner;
 mod network;
@@ -54,7 +53,6 @@ pub struct ServiceContext {
     pub(super) alias_path: PathBuf,
     pub(super) prefix: String,
     pub(super) serial: String,
-    pub(super) reload_tx: Option<watch::Sender<()>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -73,7 +71,6 @@ impl ServiceContext {
             alias_path: crate::alias_store::alias_path(),
             prefix: String::new(),
             serial: String::new(),
-            reload_tx: None,
         }
     }
 
@@ -82,7 +79,6 @@ impl ServiceContext {
         serial: impl Into<String>,
         device_name: impl Into<String>,
         alias: Option<String>,
-        reload_tx: watch::Sender<()>,
     ) -> Self {
         Self {
             snapshot: Arc::new(Mutex::new(IdentitySnapshot {
@@ -92,7 +88,6 @@ impl ServiceContext {
             alias_path: crate::alias_store::alias_path(),
             prefix: prefix.into(),
             serial: serial.into(),
-            reload_tx: Some(reload_tx),
         }
     }
 
@@ -108,10 +103,21 @@ impl ServiceContext {
         self.snapshot.lock().expect("identity mutex").alias.clone()
     }
 
-    pub(super) fn apply_identity(&self, device_name: String, alias: Option<String>) {
-        let mut snapshot = self.snapshot.lock().expect("identity mutex");
-        snapshot.device_name = device_name;
-        snapshot.alias = alias;
+    pub(super) fn pending_identity(&self) -> Option<(String, Option<String>)> {
+        if self.serial.is_empty() {
+            return None;
+        }
+        let pending_alias = crate::alias_store::load_alias(&self.alias_path, &self.serial);
+        let pending_name = crate::device_name::compose_device_name(
+            &self.prefix,
+            pending_alias.as_deref(),
+            &self.serial,
+        );
+        if pending_name == self.device_name() {
+            None
+        } else {
+            Some((pending_name, pending_alias))
+        }
     }
 }
 

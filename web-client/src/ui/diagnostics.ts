@@ -10,6 +10,8 @@ export interface StatusInterfaceView {
 export interface StatusView {
   deviceName: string;
   alias?: string;
+  pendingDeviceName?: string;
+  pendingAlias?: string;
   hostname: string;
   system: string;
   user: string;
@@ -34,6 +36,8 @@ export function statusView(response: CommandResponse | undefined, t: TFunction):
   return {
     deviceName: readString(data.device_name) || t("diagnostics.unknownDevice"),
     alias: readString(data.alias) || undefined,
+    pendingDeviceName: readString(data.pending_device_name) || undefined,
+    pendingAlias: readString(data.pending_alias) || undefined,
     hostname: readString(data.hostname) || t("diagnostics.unknownHost"),
     system: readString(data.system) || t("diagnostics.unknownSystem"),
     user: readString(data.user) || t("diagnostics.unknownUser"),

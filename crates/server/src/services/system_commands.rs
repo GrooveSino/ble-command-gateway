@@ -62,9 +62,12 @@ pub(super) async fn run_status(
     let interfaces = current_status_interfaces(timeout_sec).await;
     let ip = preferred_ipv4(&interfaces);
 
+    let pending = context.pending_identity();
     let data = protocol::responses::StatusResponseData {
         device_name: context.device_name(),
         alias: crate::device_name::advertised_alias(context.alias().as_deref()).map(str::to_string),
+        pending_device_name: pending.as_ref().map(|(name, _)| name.clone()),
+        pending_alias: pending.and_then(|(_, alias)| alias),
         hostname: hostname.text.clone(),
         system: system.text.clone(),
         user: user.text.clone(),
@@ -105,16 +108,13 @@ pub(super) fn run_set_alias(context: &super::ServiceContext, raw_alias: &str) ->
     }
     let device_name =
         crate::device_name::compose_device_name(&context.prefix, alias.as_deref(), &context.serial);
-    context.apply_identity(device_name.clone(), alias.clone());
-    if let Some(tx) = &context.reload_tx {
-        let _ = tx.send(());
-    }
     let data = protocol::responses::SetAliasResponseData {
         device_name: device_name.clone(),
         alias,
+        applies_after_restart: true,
     };
     SystemExecResult::ok(
-        format!("device name updated to {device_name}"),
+        format!("saved BLE name {device_name}; restart the device to apply it"),
         Some(protocol::responses::to_map(&data).expect("set alias response serializes")),
     )
 }

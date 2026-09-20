@@ -25,10 +25,6 @@ impl CommandEventSender {
         }
     }
 
-    pub fn device_name(&self) -> String {
-        self.service_context.device_name()
-    }
-
     pub async fn handle_ack(&self, ack: protocol::requests::LinkAckArgs, request_id: &str) {
         match ack.ack_type {
             protocol::requests::AckType::Chunk => {

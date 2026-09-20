@@ -22,15 +22,16 @@ export function BasicInfoPanel({
   onStatus: () => void;
   onCapabilities: () => void;
   onHeartbeat: () => void;
-  onSetAlias: (alias: string) => void;
+  onSetAlias: (alias: string) => void | Promise<unknown>;
 }) {
   const { t } = useI18n();
   const [showRaw, setShowRaw] = useState(false);
   const [showProtocol, setShowProtocol] = useState(false);
   const [aliasInput, setAliasInput] = useState("");
+  const [aliasNotice, setAliasNotice] = useState("");
   const status = statusView(statusResponse, t);
   const capabilities = capabilitiesView(capabilitiesResponse, t);
-  const canSetAlias = capabilities?.commands.includes("system.set_alias") === true;
+  const canSetAlias = !capabilities || capabilities.commands.includes("system.set_alias");
   useEffect(() => {
     setAliasInput(status?.alias ?? "");
   }, [status?.alias]);
@@ -58,26 +59,6 @@ export function BasicInfoPanel({
           <span>{t("basic.device")}</span>
           <strong>{status?.deviceName ?? t("basic.notRead")}</strong>
           <p>{status ? `${status.hostname} · ${status.user}` : t("basic.deviceHelp")}</p>
-          {canSetAlias && (
-            <div className="yd-alias-form">
-              <TextInput
-                id="device-alias"
-                labelText={t("basic.alias")}
-                helperText={t("basic.aliasHelp")}
-                placeholder={t("basic.aliasPlaceholder")}
-                value={aliasInput}
-                onChange={(event) => setAliasInput(event.target.value)}
-              />
-              <div className="yd-button-row">
-                <Button size="sm" disabled={Boolean(busyCommand)} onClick={() => onSetAlias(aliasInput)}>
-                  {t("basic.aliasSave")}
-                </Button>
-                <Button size="sm" kind="ghost" disabled={Boolean(busyCommand)} onClick={() => onSetAlias("")}>
-                  {t("basic.aliasClear")}
-                </Button>
-              </div>
-            </div>
-          )}
         </Tile>
         <Tile className="yd-metric-card">
           <span>{t("basic.system")}</span>
@@ -95,6 +76,52 @@ export function BasicInfoPanel({
           <p>{heartbeatResponse?.text || t("basic.heartbeatHelp")}</p>
         </Tile>
       </div>
+      <section className="yd-diagnostics-section yd-alias-panel">
+        <h3>{t("basic.aliasTitle")}</h3>
+        <p>{t("basic.aliasCurrent", { name: status?.deviceName ?? t("basic.notRead") })}</p>
+        {status?.pendingDeviceName && (
+          <p>{t("basic.aliasPending", { name: status.pendingDeviceName })}</p>
+        )}
+        <p>{t("basic.aliasRestartHint")}</p>
+        {!canSetAlias && <p>{t("basic.aliasUnsupported")}</p>}
+        <div className="yd-alias-form">
+          <TextInput
+            id="device-alias"
+            labelText={t("basic.alias")}
+            helperText={t("basic.aliasHelp")}
+            placeholder={t("basic.aliasPlaceholder")}
+            value={aliasInput}
+            disabled={!canSetAlias || Boolean(busyCommand)}
+            onChange={(event) => setAliasInput(event.target.value)}
+          />
+          <div className="yd-button-row">
+            <Button
+              size="sm"
+              disabled={!canSetAlias || Boolean(busyCommand)}
+              onClick={() => {
+                void Promise.resolve(onSetAlias(aliasInput)).then(() => {
+                  setAliasNotice(t("basic.aliasSaved"));
+                });
+              }}
+            >
+              {t("basic.aliasSave")}
+            </Button>
+            <Button
+              size="sm"
+              kind="ghost"
+              disabled={!canSetAlias || Boolean(busyCommand)}
+              onClick={() => {
+                void Promise.resolve(onSetAlias("")).then(() => {
+                  setAliasNotice(t("basic.aliasSaved"));
+                });
+              }}
+            >
+              {t("basic.aliasClear")}
+            </Button>
+          </div>
+          {aliasNotice && <p>{aliasNotice}</p>}
+        </div>
+      </section>
       {status && (
         <section className="yd-diagnostics-section">
           <h3>{t("basic.interfaces")}</h3>
