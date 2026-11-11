@@ -73,6 +73,22 @@ jobs:
             "target/release/yundrone-ble-client.app" \
             "yundrone-ble-client-macos-arm64.zip"
 
+      - name: Package server installer
+        shell: bash
+        run: |
+          version="$(cat VERSION)"
+          mkdir -p dist/server-installer
+          cp -R scripts/install/installer/. dist/server-installer/
+          python3 scripts/release/generate_installer_manifest.py \
+            --source scripts/install/installer \
+            --version "$version" \
+            --base-url "https://install.yundrone.cn/yundrone/ble-server" \
+            --output dist/server-installer/MANIFEST.json
+          COPYFILE_DISABLE=1 tar -C dist/server-installer \
+            -czf "yundrone-ble-server-installer-$version.tar.gz" .
+          shasum -a 256 "yundrone-ble-server-installer-$version.tar.gz" \
+            > "yundrone-ble-server-installer-$version.tar.gz.sha256"
+
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -96,4 +112,6 @@ jobs:
           gh release upload "${GITHUB_REF_NAME}" \
             "yundrone-ble-client-macos-arm64.zip" \
             "dist/ble-client/releases/$(cat VERSION)/yundrone-ble-client-macos-arm64.tar.gz" \
+            "yundrone-ble-server-installer-$(cat VERSION).tar.gz" \
+            "yundrone-ble-server-installer-$(cat VERSION).tar.gz.sha256" \
             --clobber

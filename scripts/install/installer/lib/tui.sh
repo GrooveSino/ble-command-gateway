@@ -104,41 +104,44 @@ tui_step() {
   gum style --foreground 39 "• $1"
 }
 
-tui_run_step() {
+# Keep options and cleanup traps local to this step. The task runs synchronously;
+# terminal rendering must never gate installation progress.
+tui_run_step() (
   local title="$1"
   shift
-  if ! tui_ready; then
-    "$@"
-    return $?
+  local log_file status cleanup loading=no
+  trap - EXIT
+  log_file="$(mktemp)" || exit "$?"
+  printf -v cleanup 'rm -f -- %q' "$log_file"
+  trap "$cleanup" EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  if tui_ready; then
+    loading=yes
   fi
+  printf '• 正在执行：%s\n' "$title"
 
-  local log_file status
-  log_file="$(mktemp)"
+  # Do not put this subshell in an if/! condition: Bash would disable errexit
+  # throughout shell functions called by the task, hiding intermediate errors.
+  set +e
   (
-    export TUI_LOADING=yes
+    trap - EXIT INT TERM
+    set -Eeuo pipefail
+    export TUI_LOADING="$loading"
     "$@"
-  ) >"$log_file" 2>&1 &
-  local pid=$!
-  gum spin \
-    --spinner dot \
-    --spinner.foreground 39 \
-    --title.foreground 212 \
-    --title "$title" \
-    -- bash -c 'while kill -0 "$1" 2>/dev/null; do sleep 0.2; done' _ "$pid"
-
-  wait "$pid"
+  ) >"$log_file" 2>&1
   status=$?
 
   if [ "$status" -ne 0 ]; then
-    tui_danger_card "步骤失败：${title}"
+    printf '✗ 步骤失败：%s（退出码 %s）\n' "$title" "$status" >&2
     cat "$log_file" >&2
-    rm -f "$log_file"
-    return "$status"
+    exit "$status"
   fi
-
-  rm -f "$log_file"
-  gum style --foreground 42 "✓ ${title}"
-}
+  if [ "$loading" = no ]; then
+    cat "$log_file"
+  fi
+  printf '✓ 完成：%s\n' "$title"
+)
 
 tui_table() {
   gum table \

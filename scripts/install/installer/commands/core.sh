@@ -177,12 +177,13 @@ ${name}
 install_or_update() {
   validate_prefix
 
-  local arch adapter tmp tarball selected_version release_dir staging_dir planned_identity
+  local arch adapter tmp tarball selected_version release_dir staging_dir planned_identity cleanup
   arch="$(detect_arch)"
   adapter="$(adapter_display)"
   planned_identity="$(identity_name)"
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
+  printf -v cleanup 'rm -rf -- %q' "$tmp"
+  trap "$cleanup" EXIT
 
   section "准备安装"
   strong "安装配置"
