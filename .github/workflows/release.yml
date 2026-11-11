@@ -14,7 +14,7 @@ env:
 jobs:
   release:
     name: Release (macOS arm64)
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Checkout
