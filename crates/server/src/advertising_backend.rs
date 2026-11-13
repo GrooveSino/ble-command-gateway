@@ -53,14 +53,17 @@ impl AdvertisingBackend {
                 }
             }
             Self::Auto => {
+                if capabilities.supported_instances.is_some() {
+                    return Ok((
+                        Self::BluezDbus,
+                        "BlueZ LEAdvertisingManager1 is available; legacy-HCI remains fallback",
+                    ));
+                }
                 if !bluetoothd.has_experimental && legacy_available {
                     return Ok((
                         Self::LegacyHci,
-                        "bluetoothd is not experimental and hcitool is available",
+                        "BlueZ advertising capabilities unavailable and hcitool is available",
                     ));
-                }
-                if capabilities.supported_instances.is_some() {
-                    return Ok((Self::BluezDbus, "BlueZ LEAdvertisingManager1 is available"));
                 }
                 if legacy_available {
                     return Ok((
@@ -103,12 +106,33 @@ mod tests {
     }
 
     #[test]
-    fn auto_prefers_legacy_without_experimental_when_hcitool_exists() {
+    fn auto_prefers_dbus_when_advertising_manager_is_available() {
         let caps = crate::advertising::AdvertisingCapabilitiesSnapshot {
             active_instances: Some(0),
             supported_instances: Some(4),
             max_advertisement_length: Some(31),
             max_scan_response_length: Some(31),
+            max_tx_power: None,
+            can_set_tx_power: false,
+            secondary_channels: vec![],
+            platform_features: vec![],
+        };
+        let env = crate::bluetoothd::BluetoothdEnvironment {
+            has_experimental: false,
+            command_line: None,
+        };
+        let (selected, _) =
+            AdvertisingBackend::select(AdvertisingBackend::Auto, &caps, &env, true).unwrap();
+        assert_eq!(selected, AdvertisingBackend::BluezDbus);
+    }
+
+    #[test]
+    fn auto_uses_legacy_when_advertising_manager_is_unavailable() {
+        let caps = crate::advertising::AdvertisingCapabilitiesSnapshot {
+            active_instances: None,
+            supported_instances: None,
+            max_advertisement_length: None,
+            max_scan_response_length: None,
             max_tx_power: None,
             can_set_tx_power: false,
             secondary_channels: vec![],
