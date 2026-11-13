@@ -137,17 +137,40 @@ fn run_hcitool(args: &[String]) -> anyhow::Result<()> {
         .args(args)
         .output()
         .context("spawn hcitool")?;
-    if output.status.success() {
-        return Ok(());
-    }
     let stderr = String::from_utf8_lossy(&output.stderr);
     let stdout = String::from_utf8_lossy(&output.stdout);
+    if output.status.success() {
+        if let Some(status) = command_complete_status(&stdout) {
+            if status != 0 {
+                return Err(anyhow!(
+                    "hcitool controller status=0x{status:02x} stdout={} stderr={}",
+                    stdout.trim(),
+                    stderr.trim()
+                ));
+            }
+        }
+        return Ok(());
+    }
     Err(anyhow!(
         "hcitool failed: status={} stdout={} stderr={}",
         output.status,
         stdout.trim(),
         stderr.trim()
     ))
+}
+
+#[cfg(target_os = "linux")]
+fn command_complete_status(output: &str) -> Option<u8> {
+    output
+        .lines()
+        .filter_map(|line| {
+            let bytes = line
+                .split_whitespace()
+                .map(|value| u8::from_str_radix(value, 16).ok())
+                .collect::<Option<Vec<_>>>()?;
+            (bytes.len() == 4 && bytes[0] == 0x05).then_some(bytes[3])
+        })
+        .last()
 }
 
 #[cfg(target_os = "linux")]
@@ -276,5 +299,17 @@ mod tests {
         assert_eq!(&args[..4], &["03", "02", "01", "06"]);
         assert_eq!(args.len(), 32);
         assert!(args[4..].iter().all(|value| value == "00"));
+    }
+
+    #[test]
+    fn detects_controller_command_disallowed_status() {
+        assert_eq!(
+            command_complete_status("> HCI Event: 0x0e plen 4\n  05 0A 20 0C"),
+            Some(0x0c)
+        );
+        assert_eq!(
+            command_complete_status("> HCI Event: 0x0e plen 4\n  05 0A 20 00"),
+            Some(0x00)
+        );
     }
 }

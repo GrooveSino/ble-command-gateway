@@ -47,6 +47,19 @@ rm -rf "$BLUETOOTH_CLASS_DIR/hci0"
 assert_eq "$(default_adapter_name)" "hci1"
 assert_eq "$(identity_name)" "yundrone-bleinit-112233"
 
+mkdir -p "$BLUETOOTH_CLASS_DIR/hci0" "$TMP_DIR/bin"
+cat >"$TMP_DIR/bin/bluetoothctl" <<'EOF'
+#!/bin/sh
+printf '%s\n' 'Controller 10:11:12:13:14:15 yundrone [default]'
+EOF
+chmod +x "$TMP_DIR/bin/bluetoothctl"
+PATH="$TMP_DIR/bin:$PATH"
+assert_eq "$(default_adapter_name)" "hci0"
+assert_eq "$(identity_serial)" "131415"
+assert_eq "$(identity_name)" "yundrone-bleinit-131415"
+rm -f "$TMP_DIR/bin/bluetoothctl"
+PATH="${PATH#"$TMP_DIR/bin:"}"
+
 printf '%s\n' '00:00:00:00:00:00' >"$BLUETOOTH_CLASS_DIR/hci1/address"
 assert_eq "$(identity_serial)" "null"
 assert_eq "$(identity_name)" "yundrone-null"

@@ -184,7 +184,7 @@ sudo journalctl -u yundrone-ble-command-gateway.service -n 120 -o cat --no-pager
 
 我们在某些 Ubuntu/ARM 开发板 + BlueZ `5.64` 上实测过一种情况：如果 `bluetoothd` 未带 `--experimental` 启动，BlueZ 会看到 D-Bus 广告对象中的 `MinInterval` / `MaxInterval`，但不会把它们继续下发到 mgmt/HCI。
 
-这已经是发现优先部署配置中的重点核对项。如果你看到“应用日志说自己在快刀广播，实机却很难被扫描到”，建议按下面步骤核对。
+这已经是发现优先部署配置中的重点核对项。server 在 `auto` 后端下会优先使用可用的 BlueZ 广播管理器，注册失败时才回退 legacy HCI；如果你看到“应用日志说自己在快刀广播，实机却很难被扫描到”，建议按下面步骤核对。
 
 ### 建议排查步骤
 
